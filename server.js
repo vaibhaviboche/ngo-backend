@@ -4,17 +4,24 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const Application = require('./models/application');
 
+const authRoutes = require('./routes/auth');          // Auth routes
+const authMiddleware = require('./middleware/authMiddleware'); // Auth middleware
+
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// MongoDB Connection
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// POST: Submit Application
-app.post('/api/applications', async (req, res) => {
+// Use the auth routes (signup, login)
+app.use('/api/auth', authRoutes);
+
+// Protected routes — require a valid JWT token to access
+
+// POST: Submit Application (protected)
+app.post('/api/applications', authMiddleware, async (req, res) => {
   try {
     const newApp = new Application(req.body);
     await newApp.save();
@@ -25,8 +32,8 @@ app.post('/api/applications', async (req, res) => {
   }
 });
 
-// GET: Fetch Applications
-app.get('/api/applications', async (req, res) => {
+// GET: Fetch Applications (protected)
+app.get('/api/applications', authMiddleware, async (req, res) => {
   try {
     const status = req.query.status;
     const query = status && status !== 'All' ? { status } : {};
@@ -37,8 +44,8 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
-// PUT: Update Status (Approve / Reject)
-app.put('/api/applications/:id/status', async (req, res) => {
+// PUT: Update Status (Approve / Reject) (protected)
+app.put('/api/applications/:id/status', authMiddleware, async (req, res) => {
   const { status } = req.body;
   try {
     const updated = await Application.findByIdAndUpdate(
@@ -56,8 +63,8 @@ app.put('/api/applications/:id/status', async (req, res) => {
   }
 });
 
-// GET: Export CSV
-app.get('/api/export', async (req, res) => {
+// GET: Export CSV (protected)
+app.get('/api/export', authMiddleware, async (req, res) => {
   try {
     const applications = await Application.find();
     const csv = [
@@ -78,4 +85,8 @@ app.get('/api/export', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+app.get("/", (req, res) => {
+  res.send("NGO backend is live ✅");
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
