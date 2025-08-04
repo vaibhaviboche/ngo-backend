@@ -86,7 +86,8 @@ app.get('/api/export', authMiddleware, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.get("/", (req, res) => {
-  res.send("NGO backend is live ✅");
+  res.send("NGO backend is finally working! 🎉");
+
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
